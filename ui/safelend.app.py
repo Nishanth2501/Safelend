@@ -85,8 +85,8 @@ def bucket_risk(p: float) -> str:
     return "Unknown"
 
 
-def sigmoid(x: float) -> float:
-    return 1 / (1 + math.exp(-x))
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
 
 
 class MockModel:
@@ -115,10 +115,10 @@ class MockModel:
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         z = X @ self.coef_ + self.intercept_
         p = sigmoid(z)
-        # Ensure p is a numpy array
-        if not isinstance(p, np.ndarray):
-            p = np.array(p)
-        # Ensure p is 2D for proper stacking
+        # Ensure p is a numpy array and handle dimensions properly
+        p = np.asarray(p)
+        if p.ndim == 0:  # scalar
+            p = np.array([p])
         if p.ndim == 1:
             p = p.reshape(-1, 1)
         return np.column_stack([1 - p, p])
