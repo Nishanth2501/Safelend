@@ -1,0 +1,35 @@
+# Core data wrangling
+pandas
+numpy
+pyarrow
+
+# SQL engine
+duckdb
+
+# Machine learning
+scikit-learn
+lightgbm
+xgboost
+imbalanced-learn
+
+# Explainability & monitoring
+shap
+evidently
+
+# Serving API
+fastapi
+uvicorn[standard]
+
+# Visualization (EDA & reporting)
+matplotlib
+seaborn
+plotly
+
+# Utilities
+python-dotenv
+tqdm
+
+# Testing & linting
+pytest
+ruff
+black
