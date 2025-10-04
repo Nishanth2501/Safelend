@@ -1,0 +1,79 @@
+{
+  "model_performance": {
+    "calibrated_model_metrics": {
+      "roc_auc": 0.9938184505692653,
+      "pr_auc": 0.9292784157996377,
+      "accuracy": 0.9746740766996953,
+      "precision": 0.9244183149818146,
+      "recall": 0.7473917421953675,
+      "f1": 0.8265324305060584
+    },
+    "raw_model_metrics": {
+      "roc_auc": 0.994354531086873,
+      "pr_auc": 0.935582778455304,
+      "accuracy": 0.9746740766996953,
+      "precision": 0.9244183149818146,
+      "recall": 0.7473917421953675,
+      "f1": 0.8265324305060584
+    },
+    "threshold": 0.7074597479081389
+  },
+  "feature_analysis": {
+    "total_features": 176,
+    "top_10_features": [
+      {
+        "feature": "ORGANIZATION_TYPE",
+        "importance": 7226
+      },
+      {
+        "feature": "EXT_SOURCE_2",
+        "importance": 3408
+      },
+      {
+        "feature": "APP_ANNUITY_TO_CREDIT",
+        "importance": 3163
+      },
+      {
+        "feature": "SK_ID_CURR",
+        "importance": 2995
+      },
+      {
+        "feature": "DAYS_ID_PUBLISH",
+        "importance": 2952
+      },
+      {
+        "feature": "DAYS_REGISTRATION",
+        "importance": 2939
+      },
+      {
+        "feature": "EXT_SOURCE_3",
+        "importance": 2935
+      },
+      {
+        "feature": "OCCUPATION_TYPE",
+        "importance": 2831
+      },
+      {
+        "feature": "PREV_DAYS_LAST_DECISION_MAX",
+        "importance": 2712
+      },
+      {
+        "feature": "DAYS_LAST_PHONE_CHANGE",
+        "importance": 2636
+      }
+    ]
+  },
+  "threshold_analysis": {
+    "optimal_threshold_range": {
+      "min_f1_threshold": 0.40000000000000013,
+      "max_f1_score": 0.8710018400344517,
+      "balanced_threshold": 0.5000000000000001
+    }
+  },
+  "confusion_matrix": {
+    "true_negatives": 281169,
+    "false_positives": 1517,
+    "false_negatives": 6271,
+    "true_positives": 18554
+  }
+}

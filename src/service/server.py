@@ -3,11 +3,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 import pandas as pd
 import numpy as np
-from .mock_model import MockSafeLendModel
+from .model_loader import get_model
 from .schemas import PredictRequest, PredictResponse, Factor
 
 app = FastAPI(title="SafeLend API", version="0.1.0")
-MODEL = MockSafeLendModel()
+MODEL = get_model()
 
 @app.get("/", response_class=HTMLResponse)
 def root():
@@ -34,7 +34,8 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model_features": len(MODEL.feature_names)}
+    health_status = MODEL.health_check()
+    return health_status
 
 @app.get("/schema")
 def schema():
@@ -62,21 +63,17 @@ def get_sample_data():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading sample data: {str(e)}")
 
-def _top_factors(x_row: pd.Series, contribs: np.ndarray, k: int = 5):
-    # contribs includes bias as last column
-    feat_names = MODEL.feature_names
-    vals = contribs[:-1]  # drop bias
-    # rank by absolute contribution
-    idx = np.argsort(np.abs(vals))[::-1][:k]
+def _top_factors(contributions: list, k: int = 5):
+    """Convert model contributions to Factor objects."""
     factors = []
-    for i in idx:
-        direction = "up_risk" if vals[i] > 0 else "down_risk"
+    for i, contrib in enumerate(contributions[:k]):
+        direction = "up_risk" if contrib['contribution'] > 0 else "down_risk"
         factors.append(Factor(
-            feature=feat_names[i],
+            feature=contrib['feature'],
             direction=direction,
-            contribution=float(vals[i]),
-            value=x_row.get(feat_names[i], None),
-            note=None
+            contribution=contrib['contribution'],
+            value=contrib['value'],
+            note=f"Importance: {contrib['importance']:.4f}"
         ))
     return factors
 
@@ -93,24 +90,19 @@ def _reason_summary(factors):
 @app.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest):
     try:
-        # Build single-row DataFrame
-        x = pd.DataFrame([req.features])
+        # Get prediction using real model
+        approve_loan, repay_prob, reasoning = MODEL.predict(req.features)
+        default_prob = 1 - repay_prob
+        decision = "default" if not approve_loan else "repay"
 
-        # align to training feature space
-        x_aligned = x.reindex(columns=MODEL.feature_names, fill_value=0)
-
-        # probabilities
-        prob = float(MODEL.predict_proba(x_aligned)[0])
-        decision = "default" if prob >= MODEL.threshold else "repay"
-
-        # contributions & top factors
-        contrib = MODEL.contrib(x_aligned)[0]  # 1 x (n_features+1)
-        factors = _top_factors(x_aligned.iloc[0], contrib, k=5)
+        # Get feature contributions
+        contributions = MODEL.get_feature_contributions(req.features, top_k=5)
+        factors = _top_factors(contributions, k=5)
         summary = _reason_summary(factors)
 
         return PredictResponse(
             model_version=app.version,
-            default_probability=prob,
+            default_probability=default_prob,
             threshold=float(MODEL.threshold),
             prediction=decision,
             top_factors=factors,
