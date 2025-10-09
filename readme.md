@@ -1,187 +1,82 @@
-# 🏦 SafeLend: Your Smart Credit Risk Assistant
+# SafeLend: Credit Risk Assistant
 
-*Making lending decisions smarter, faster, and more transparent*
+## Project Insights
+- Delivers calibrated credit-risk predictions with ROC-AUC above 0.78 and precision exceeding 80% on high-risk cases.
+- Surfaces the top contributing features for more than 95% of predictions, so loan officers understand every decision.
+- Processes over 300,000 historical applications and aggregates data from six auxiliary tables using DuckDB.
+- Supports near real-time scoring through a FastAPI service that responds in under 100 milliseconds in local tests.
+- Provides a Streamlit Cloud deployment for quick hands-on evaluation at https://nishanth2501-safelend-uisafelend-app-wacmff.streamlit.app/
 
-SafeLend is like having a super-smart loan officer that never sleeps, never gets tired, and can analyze hundreds of data points in milliseconds. We've built an end-to-end credit risk system that not only tells you whether someone will repay their loan, but also explains exactly why.
+## Overview
+SafeLend is an end-to-end credit risk platform inspired by the Home Credit Default Risk challenge. The project covers data preparation, feature engineering, model training, evaluation, and deployment in a way that mirrors production lending systems. The goal is to help lenders make faster, transparent decisions while retaining the ability to audit every recommendation.
 
-Think of it as your personal credit scoring wizard that combines the power of machine learning with the transparency you need to make confident lending decisions.
+## How the System Works
+1. **Data pipeline** – Raw CSV files are cleaned, normalized, and enriched with DuckDB SQL aggregations that summarize bureau reports, past loans, credit cards, point-of-sale records, and installment payments.
+2. **Feature engineering** – Domain-specific ratios, temporal signals, categorical encodings, and interaction terms are assembled in `src/features/build_features.py`, aligning train and test sets for modeling.
+3. **Model training** – A LightGBM classifier is trained with stratified cross-validation, calibrated with isotonic regression, and tuned to meet a minimum precision target. Artifacts and metrics are written to the `artifacts/` directory.
+4. **Inference service** – FastAPI exposes `/predict`, `/health`, and `/api/sample-data` endpoints. The service loads the calibrated model, computes feature contributions, and returns structured explanations.
+5. **User interface** – A Streamlit app offers an interactive test bench where users can enter borrower profiles, view approval decisions, inspect SHAP-style explanations, and export payloads for reproducibility.
 
-## 🎯 What Makes SafeLend Special?
+## Data Sources
+The solution uses the Home Credit Default Risk dataset from Kaggle, including application data plus bureau, previous loan, installment, credit card, and POS histories. Each table is aggregated into Parquet files stored under `data/interim/`, then joined with the main application records to produce modeling-ready datasets in `data/processed/`.
 
-Ever wondered how banks decide who gets a loan? SafeLend demystifies this process by:
-- **Analyzing 176+ features** from an applicant's financial history
-- **Making predictions in real-time** with explainable AI
-- **Providing clear reasoning** for every decision
-- **Learning from patterns** that humans might miss
-
-## 📊 The Data Story
-
-We're using the famous **Home Credit Default Risk dataset** from Kaggle - it's like a treasure trove of real-world lending scenarios:
-
-- **300K+ loan applications** to learn from
-- **10 different data sources** (applications, credit bureau, payment history, etc.)
-- **Rich feature engineering** that transforms raw data into actionable insights
-- **Real-world complexity** with missing values, outliers, and messy data
-
-This isn't just academic - it mirrors exactly what happens in real fintech companies every day.
-
-## 🏗️ How SafeLend Works (The Magic Behind the Scenes)
-
-### 1. 📈 Data Pipeline - From Messy to Magnificent
-```
-Raw CSV files → Clean data → Smart aggregations → Feature engineering → Ready-to-predict data
-```
-
-**What happens here:**
-- **Cleaning**: We handle missing dates, normalize categories, and deal with those pesky outliers
-- **SQL Magic**: Using DuckDB to create powerful aggregations (like "average payment delays in last 6 months")
-- **Feature Engineering**: Creating ratios, interactions, and temporal features that capture financial behavior patterns
-
-### 2. 🤖 Model Training - The Brain of SafeLend
-- **LightGBM**: Our workhorse algorithm that's both fast and accurate
-- **Probability Calibration**: Ensures our risk scores are actually meaningful (not just pretty numbers)
-- **Smart Thresholding**: Automatically finds the sweet spot between approving good loans and rejecting risky ones
-- **Cross-validation**: Makes sure our model isn't just memorizing the training data
-
-### 3. 🚀 API Service - Lightning Fast Predictions
-- **FastAPI**: Modern, fast, and automatically documented
-- **Real-time predictions**: Get answers in milliseconds
-- **Feature explanations**: See exactly which factors influenced the decision
-- **Health monitoring**: Always know if your system is running smoothly
-
-### 4. 🎨 Demo UI - See It In Action
-- **Beautiful React interface** for testing and demonstrations
-- **Interactive predictions** with real-time updates
-- **Copy-paste cURL commands** for easy API testing
-- **Visual explanations** of why decisions were made
-
-## 🚀 Getting Started (Super Easy!)
-
+## Getting Started
 ### Prerequisites
-Just make sure you have Python 3.8+ installed. That's it!
+- Python 3.8 or later
+- Optional: Node.js 18+ for running the Streamlit app or any additional frontend components
 
-### Step 1: Clone and Install
+### Installation
 ```bash
 git clone https://github.com/Nishanth2501/safelend.git
 cd safelend
 pip install -r requirements.txt
 ```
 
-### Step 2: Build the Magic
+### Build the datasets and model
 ```bash
-# This processes all the raw data and creates beautiful features
-make data
-
-# Train our smart model
-make train
+make data   # generate processed feature tables
+make train  # train the LightGBM model and save artifacts
 ```
 
-### Step 3: Launch the API
+### Serve predictions
 ```bash
-# Start the prediction service
-make serve
-# Visit http://localhost:8000/docs for interactive API documentation
+make serve  # launches FastAPI on http://localhost:8000
 ```
+Visit `/docs` for interactive OpenAPI documentation and sample payloads.
 
-### Step 4: Try the Demo
+### Explore the demo app
 ```bash
 cd ui
-npm install
-npm run dev
-# Open http://localhost:5173 to see SafeLend in action!
+streamlit run safelend.app.py
 ```
+The Streamlit interface mirrors the API results, lists the top factors driving each decision, and provides narrative recommendations.
 
-## ✨ What You Get
+## Key Features
+- **Explainable predictions** – Every score is paired with a ranked list of risk drivers and a plain-language summary.
+- **Business-aware thresholding** – Decision thresholds are chosen to satisfy minimum precision targets, balancing approvals and risk.
+- **Data quality controls** – Pipeline scripts include sanity checks for missing values, outliers, and drift markers.
+- **Production readiness** – Logging, health endpoints, Docker support, and pytest-based regression tests are included to ease deployment.
 
-### For Lenders & Fintech Companies:
-- **Accurate risk assessment** with 80%+ precision on high-risk loans
-- **Transparent decisions** - no black box, see exactly why each decision was made
-- **Scalable architecture** - handle thousands of applications per minute
-- **Production-ready** - built with real-world deployment in mind
+## Technology Stack
+- **Data and ML**: Python, pandas, NumPy, scikit-learn, LightGBM, SHAP, DuckDB
+- **Model and deployment**: Calibrated LightGBM classifier persisted with joblib and exposed by the FastAPI service, mirrored in the hosted Streamlit demo at https://nishanth2501-safelend-uisafelend-app-wacmff.streamlit.app/
+- **Service layer**: FastAPI, Pydantic, Uvicorn
+- **Interface**: Streamlit application for scenario testing and storytelling
+- **Tooling**: Makefile workflows, pytest, python-dotenv, joblib for model serialization
 
-### For Data Scientists & Engineers:
-- **Complete ML pipeline** from raw data to deployed model
-- **Best practices** in feature engineering, model evaluation, and MLOps
-- **Extensible design** - easy to add new features or models
-- **Comprehensive testing** and monitoring
+## Performance Summary
+- ROC-AUC (out-of-fold): 0.78+
+- Precision on high-risk cohort: above 80%
+- Typical API response time: < 100 ms on commodity hardware
+- Aggregated feature coverage: more than 170 engineered predictors across groups
 
-### For Students & Learners:
-- **Real-world example** of how credit scoring actually works
-- **End-to-end project** covering data science, ML engineering, and deployment
-- **Well-documented code** with clear explanations
-- **Industry-standard tools** and practices
+## Contributing
+Contributions are welcome. Please open an issue describing the change you propose, discuss significant design ideas in advance, and submit pull requests with relevant tests or notebooks when possible.
 
-## 🔍 Deep Dive: What Makes This Production-Ready?
+## Additional Resources
+- Data exploration notebooks: `notebooks/`
+- API usage example: `src/service/example_request.py`
+- SQL aggregations: `sql/`
+- Model training workflow: `src/models/train.py`
 
-### Model Evaluation & Monitoring
-- **Comprehensive metrics**: ROC-AUC, Precision-Recall, F1-Score, and more
-- **Feature importance analysis** to understand model behavior
-- **Threshold optimization** for business-aligned decisions
-- **Performance visualizations** for stakeholder communication
-
-### Data Quality & Validation
-- **Automated sanity checks** to catch data drift and anomalies
-- **Feature stability monitoring** using Population Stability Index (PSI)
-- **Missing value analysis** and imputation strategies
-- **Outlier detection** and treatment
-
-### Explainability & Transparency
-- **SHAP values** for feature contribution analysis
-- **Top factor identification** for each prediction
-- **Reasoning summaries** in plain English
-- **Model interpretability** without sacrificing performance
-
-### Engineering Excellence
-- **Modular architecture** with clear separation of concerns
-- **Error handling** and graceful degradation
-- **Health checks** and monitoring endpoints
-- **Docker support** for easy deployment
-
-## 🛠️ Tech Stack (The Tools We Love)
-
-**Data & ML:**
-- Python 3.8+ with pandas, NumPy, scikit-learn
-- LightGBM for gradient boosting
-- DuckDB for fast SQL aggregations
-- SHAP for explainable AI
-
-**Backend & API:**
-- FastAPI for modern, fast web APIs
-- Pydantic for data validation
-- Uvicorn for ASGI server
-
-**Frontend:**
-- React with Vite for lightning-fast development
-- Modern JavaScript with hooks and functional components
-
-**DevOps & Deployment:**
-- Docker for containerization
-- Makefile for reproducible builds
-- Comprehensive testing with pytest
-
-## 📈 Performance Highlights
-
-- **Model Performance**: 80%+ precision on high-risk predictions
-- **Response Time**: Sub-100ms API predictions
-- **Scalability**: Handles 1000+ requests per minute
-- **Accuracy**: ROC-AUC of 0.78+ on test data
-- **Explainability**: Clear reasoning for 95%+ of decisions
-
-## 🤝 Contributing & Support
-
-We love contributions! Whether you're fixing a bug, adding a feature, or improving documentation, we want to hear from you.
-
-**Found a bug?** Open an issue with details about what happened.
-**Want a feature?** Let us know what would make SafeLend even better.
-**Have questions?** Check out the documentation or ask in discussions.
-
-## 📚 Learn More
-
-- **API Documentation**: Visit `/docs` when running the server
-- **Jupyter Notebooks**: Explore the data and model in `notebooks/`
-- **Code Examples**: Check out `src/service/example_request.py`
-- **Architecture**: Dive into the source code - it's well-documented!
-
----
-
-*SafeLend: Because every lending decision should be smart, fast, and fair.* 🚀
+SafeLend provides a realistic template for delivering transparent credit decisions at scale. Use it as a reference for production ML patterns, feature engineering playbooks, or as a starting point for your own lending applications.
